@@ -41,14 +41,21 @@ final class OAuth2Grants
      */
     public const REFRESH_TOKEN = 'refresh_token';
 
+    public const MAP = [
+        self::AUTHORIZATION_CODE => 'authorization code',
+        self::CLIENT_CREDENTIALS => 'client credentials',
+        self::IMPLICIT => 'implicit',
+        self::PASSWORD => 'password',
+        self::REFRESH_TOKEN => 'refresh token',
+    ];
+
+    /**
+     * @deprecated Will be removed in v4, use {@see OAuth2Grants::MAP} instead
+     *
+     * @TODO Remove in v4.
+     */
     public static function has(string $grant): bool
     {
-        return \in_array($grant, [
-            self::CLIENT_CREDENTIALS,
-            self::PASSWORD,
-            self::REFRESH_TOKEN,
-            self::AUTHORIZATION_CODE,
-            self::IMPLICIT,
-        ]);
+        return isset(self::MAP[$grant]);
     }
 }
