@@ -188,7 +188,30 @@ final class TokenEndpointTest extends AbstractAcceptanceTest
         $this->assertSame(3600, $jsonResponse['expires_in']);
         $this->assertNotEmpty($jsonResponse['access_token']);
     }
+    
+    
+    public function testSuccessfulAuthorizationCodeOpenIDRequest()
+    {
+        $authCode = $this->client
+            ->getContainer()
+            ->get(AuthCodeManagerInterface::class)
+            ->find(FixtureFactory::FIXTURE_AUTH_CODE_OPENID);
 
+        timecop_freeze(new DateTime());
+
+        $this->client->request('POST', '/token', [
+            'client_id' => 'foo',
+            'client_secret' => 'secret',
+            'grant_type' => 'authorization_code',
+            'redirect_uri' => 'https://example.org/oauth2/redirect-uri',
+            'code' => TestHelper::generateEncryptedAuthCodePayload($authCode),
+        ]);
+
+        timecop_return();
+        
+        $this->assertNotEmpty($jsonResponse['id_token']);
+    }
+    
     public function testFailedTokenRequest(): void
     {
         $this->client->request('POST', '/token');

@@ -33,6 +33,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
 use Trikoder\Bundle\OAuth2Bundle\DBAL\Type\Grant as GrantType;
 use Trikoder\Bundle\OAuth2Bundle\DBAL\Type\RedirectUri as RedirectUriType;
 use Trikoder\Bundle\OAuth2Bundle\DBAL\Type\Scope as ScopeType;
+use Trikoder\Bundle\OAuth2Bundle\EventListener\AuthorizationRequestAuthenticationResolvingListener;
+use Trikoder\Bundle\OAuth2Bundle\EventListener\AuthorizationRequestDecisionResolvingListener;
 use Trikoder\Bundle\OAuth2Bundle\EventListener\ConvertExceptionToResponseListener;
 use Trikoder\Bundle\OAuth2Bundle\League\AuthorizationServer\GrantTypeInterface;
 use Trikoder\Bundle\OAuth2Bundle\Manager\Doctrine\AccessTokenManager;
@@ -41,6 +43,7 @@ use Trikoder\Bundle\OAuth2Bundle\Manager\Doctrine\ClientManager;
 use Trikoder\Bundle\OAuth2Bundle\Manager\Doctrine\RefreshTokenManager;
 use Trikoder\Bundle\OAuth2Bundle\Manager\ScopeManagerInterface;
 use Trikoder\Bundle\OAuth2Bundle\Model\Scope as ScopeModel;
+use Trikoder\Bundle\OAuth2Bundle\OpenIDConnect\IdTokenResponse;
 use Trikoder\Bundle\OAuth2Bundle\Security\Authentication\Token\OAuth2TokenFactory;
 use Trikoder\Bundle\OAuth2Bundle\Service\CredentialsRevoker\DoctrineCredentialsRevoker;
 
@@ -62,6 +65,7 @@ final class TrikoderOAuth2Extension extends Extension implements PrependExtensio
         $this->configureAuthorizationServer($container, $config['authorization_server']);
         $this->configureResourceServer($container, $config['resource_server']);
         $this->configureScopes($container, $config['scopes']);
+        $this->configureOpenIDConnect($container, $config['openid_connect']);
 
         $container->getDefinition(OAuth2TokenFactory::class)
             ->setArgument(0, $config['role_prefix']);
@@ -186,6 +190,7 @@ final class TrikoderOAuth2Extension extends Extension implements PrependExtensio
         }
 
         $this->configureGrants($container, $config);
+        $this->configureAuthorizationStrategy($container, $config['authorization_strategy'], $config['consent_route']);
     }
 
     private function configureGrants(ContainerBuilder $container, array $config): void
@@ -311,6 +316,28 @@ final class TrikoderOAuth2Extension extends Extension implements PrependExtensio
             $scopeManager->addMethodCall('save', [
                 new Definition(ScopeModel::class, [$scope]),
             ]);
+        }
+    }
+
+    private function configureAuthorizationStrategy(ContainerBuilder $container, string $authorizationStrategy, string $consentRoute)
+    {
+        $container->getDefinition('trikoder.oauth2.authorization_decision_strategy.user_consent')->replaceArgument(3, $consentRoute);
+        $container
+            ->getDefinition(AuthorizationRequestDecisionResolvingListener::class)
+            ->replaceArgument(0, new Reference($authorizationStrategy));
+    }
+
+    private function configureOpenIDConnect(ContainerBuilder $container, array $openid_connect): void
+    {
+        if (isset($openid_connect['enabled']) && $openid_connect['enabled']) {
+            $container
+                ->getDefinition(AuthorizationServer::class)
+                ->setArgument(5, new Reference(IdTokenResponse::class))
+            ;
+            $container
+                ->getDefinition(AuthorizationRequestAuthenticationResolvingListener::class)
+                ->setArgument(5, $openid_connect['login_route'])
+            ;
         }
     }
 }

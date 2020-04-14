@@ -192,6 +192,9 @@ final class TestKernel extends Kernel implements CompilerPassInterface
                     'entity_manager' => 'default',
                 ],
             ],
+            'openid_connect' => [
+                'enabled' => true,
+            ],
         ]);
 
         $this->configureControllers($container);
