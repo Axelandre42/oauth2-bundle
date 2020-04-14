@@ -29,7 +29,7 @@
         "symfony/event-dispatcher-contracts": "^1.1",
         "symfony/framework-bundle": "^4.4|^5.0",
         "symfony/psr-http-message-bridge": "^2.0",
-        "symfony/security-bundle": "^4.4|^5.0"
+        "symfony/security-bundle": "^4.4|^5.0",
         "steverhoades/oauth2-openid-connect-server": "^1.0"
     },
     "require-dev": {
